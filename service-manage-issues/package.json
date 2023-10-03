@@ -1,0 +1,11 @@
+{
+  "name": "service-manage-issues",
+  "version": "1.0.0",
+  "description": "Microservice for manage issues",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amashi Bastiansz",
+  "license": "ISC"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "service-manage-pr",
+  "version": "1.0.0",
+  "description": "Microservice for manage pull requests",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Amashi Bastiansz",
+  "license": "ISC"
+}
