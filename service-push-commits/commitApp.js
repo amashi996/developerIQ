@@ -51,7 +51,7 @@ const path = require("path");
 const TOKEN_FILE_PATH = path.resolve(__dirname, "../token.txt");
 require("dotenv").config({ path: TOKEN_FILE_PATH });
 
-app.get("/getGHToken", (req, res) => {
+app.get("/getGitHubToken", (req, res) => {
   try {
     const token = fs.readFileSync(TOKEN_FILE_PATH, "utf8");
 

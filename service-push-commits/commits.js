@@ -1,68 +1,94 @@
+/*
 const express = require("express");
-const axios = require("axios");
-const AWS = require("aws-sdk");
-const getCommitID = require("./getCommitID"); // Assuming you have a separate "getCid.js" file
-
 const app = express();
-const port = 3000;
+const request = require("request-promise");
+const fs = require("fs");
+const { getCommit } = require("./getCommitID");
 
-app.get("/getCommits", async (req, res) => {
+app.use(express.json());
+const COL_NAME = "commitID";
+
+app.get("/", (req, res) => {
+  res.send("Welcome");
+});
+
+// Get GitHub Token
+const path = require("path");
+const TOKEN_FILE_PATH = path.resolve(__dirname, "../token.txt");
+require("dotenv").config({ path: TOKEN_FILE_PATH });
+
+app.get("/getGitHubToken", (req, res) => {
   try {
-    const username = "amashi996";
-    const token = await getCommitID.getGHToken();
+    const token = fs.readFileSync(TOKEN_FILE_PATH, "utf8");
+    console.log(typeof token);
     console.log(token);
-
-    const url = `https://api.github.com/users/${username}/events`;
-
-    const response = await axios.get(url, {
-      headers: { Authorization: `token ${token}` },
-    });
-
-    const session = new AWS.Session({ region: "ap-south-1" });
-    const dynamodb = new AWS.DynamoDB.DocumentClient({ service: session });
-    const tableName = "dev_commits";
-    const table = dynamodb.createTable({
-      TableName: tableName,
-    });
-
-    const maxId = await getCommitID.getMaxCommitID();
-
-    if (response.status === 200) {
-      const events = response.data;
-      const commits = [];
-
-      for (const event of events) {
-        if (event.type === "PushEvent") {
-          for (const commit of event.payload.commits.slice(0, 15)) {
-            console.log(commit);
-            commits.push(commit.url);
-
-            await table
-              .put({
-                TableName: tableName,
-                Item: {
-                  cid: maxId,
-                  gh_username: username,
-                  commit_url: commit.url,
-                },
-              })
-              .promise();
-
-            maxId += 1;
-          }
-        }
-      }
-      res.json({ message: "Commits saved successfully" });
-    } else {
-      console.error(`Error: ${response.status}`);
-      res.status(response.status).json({ error: `Error: ${response.status}` });
-    }
+    res.json({ github_token: token });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error reading GitHub token from file:", error);
+    res.status(500).json({ error: "Error reading GitHub token from file" });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// Get GitHub events
+app.get("/getGitHubEvents", async (req, res) => {
+  const username = "amashi996"; // Hardcoded username
+
+  // Retrieve GitHub token from the "token.txt" file
+  try {
+    const token = fs.readFileSync(TOKEN_FILE_PATH, "utf8");
+
+    if (!token) {
+      return res.status(500).json({ error: "GitHub token is not available" });
+    }
+
+    const options = {
+      uri: `https://api.github.com/users/${username}/events`,
+      headers: {
+        Authorization: `token ${token}`,
+        "User-Agent": "YourApp", // Replace with your app's User-Agent
+      },
+      json: true,
+    };
+
+    const events = await request(options);
+
+    if (Array.isArray(events)) {
+      res.json(events);
+    } else {
+      res.status(500).json({ error: "Unable to fetch GitHub events" });
+    }
+  } catch (error) {
+    console.error("Error fetching GitHub events:", error);
+    res.status(500).json({ error: "Error fetching GitHub events" });
+  }
 });
+
+// Get max commit id
+app.get("/getMaxCommitID", async (req, res) => {
+  try {
+    const commitData = await getCommit();
+
+    if (commitData.Items && commitData.Items.length > 0) {
+      const maxVal = Math.max(
+        ...commitData.Items.map((item) => item[COL_NAME])
+      );
+      console.log(`The maximum value for ${COL_NAME} is: ${maxVal}`);
+      res.json({ maxVal: maxVal + 1 });
+    } else {
+      console.log("No items found in the table");
+      res.status(404).json({ message: "No items found in the table" });
+    }
+  } catch (error) {
+    console.error("Error in scanning the table: ", error);
+    res.status(500).json({
+      error: "Error in scanning the table",
+    });
+  }
+});
+
+const port = process.env.PORT || 3001;
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
+
+*/
