@@ -1,3 +1,1 @@
-# developerIQ
-
-A tool to track productivity of developers
+A tracker to check the productivity of developers
