@@ -9,7 +9,10 @@
   "author": "Amashi Bastiansz",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1468.0",
-    "csv-parser": "^3.0.0"
+    "aws-sdk": "^2.1469.0",
+    "axios": "^1.5.1",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   }
 }
