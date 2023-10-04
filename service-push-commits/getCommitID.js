@@ -14,18 +14,32 @@ AWS.config.update({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-const docClient = new AWS.DynamoDB.DocumentClient();
+const dynamoClient = new AWS.DynamoDB.DocumentClient();
 
 // Initialize express application
 const app = express();
 const port = 3001;
 
 // Specify table name and column name
-const tableName = "dev_commits";
-const colName = "commitID";
+const TABLE_NAME = "dev_commits";
+const COL_NAME = "commitID";
+
+const getCommit = async () => {
+  const params = {
+    TableName: TABLE_NAME,
+  };
+  const commits = await dynamoClient.scan(params).promise();
+  console.log(commits);
+  return commits;
+};
+
+module.exports = {
+  dynamoClient,
+  getCommit,
+};
 
 // Define route to retrieve the max value of commitID
-app.get("/getMaxCommitID", async (req, res) => {
+/*app.get("/getMaxCommitID", async (req, res) => {
   try {
     console.log("Hello");
     const params = {
@@ -48,10 +62,10 @@ app.get("/getMaxCommitID", async (req, res) => {
       error: "Error in scanning the table",
     });
   }
-});
+});*/
 
 // Define a route to get the GitHub token from AWS Secrets Manager
-app.get("/getGHToken", async (req, res) => {
+/*app.get("/getGHToken", async (req, res) => {
   const secretName = "GITHUB_PAT";
   const regionName = "ap-south-1";
   const secretsManager = new AWS.SecretsManager({ region: regionName });
@@ -69,9 +83,9 @@ app.get("/getGHToken", async (req, res) => {
       .status(500)
       .json({ error: "Error retrieving GitHub token from Secrets Manager" });
   }
-});
+});*/
 
 // Start the Express server
-app.listen(port, () => {
+/*app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-});
+});*/
