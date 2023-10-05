@@ -23,12 +23,6 @@ function getGitHubToken() {
   }
 }
 
-// Generate commitID based on UUID
-function generateCommitID() {
-  const commitID = uuid.v4();
-  return commitID;
-}
-
 // Define a function to get the maximum commit ID from your data source
 async function getMaxCommitID() {
   try {
@@ -60,6 +54,13 @@ async function getMaxCommitID() {
   }
 }
 
+app.use(express.json());
+
+// Welcome route
+app.get("/", (req, res) => {
+  res.send("Welcome");
+});
+
 // Get commits
 app.get("/getCommits", async (req, res) => {
   try {
@@ -89,13 +90,6 @@ app.get("/getMaxCommitID", async (req, res) => {
   }
 });
 
-app.use(express.json());
-
-// Welcome route
-app.get("/", (req, res) => {
-  res.send("Welcome");
-});
-
 // Get GitHub Token
 app.get("/getGitHubToken", (req, res) => {
   const token = getGitHubToken();
@@ -106,65 +100,6 @@ app.get("/getGitHubToken", (req, res) => {
     res.status(500).json({ error: "GitHub token is not available" });
   }
 });
-
-/*Add a new route to save GitHub username to DynamoDB
-const path_aws = require("path");
-const envPath = path_aws.resolve(__dirname, "../.env");
-require("dotenv").config({ path: envPath });
-
-app.get("/saveGitHubUsername/:username", async (req, res) => {
-  const username = req.params.username;
-
-  const token = getGitHubToken();
-  if (!token) {
-    return res.status(500).json({ error: "GitHub token is not available" });
-  }
-
-  const commitID = generateCommitID();
-  if (!commitID) {
-    return res.status(500).json({ error: "Commit ID is not available" });
-  } else {
-    console.log(commitID);
-  }
-
-  AWS.config.update({
-    region: process.env.AWS_DEFAULT_REGION,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  });
-
-  const dynamodb = new AWS.DynamoDB.DocumentClient();
-  const tableName = "dev_commits_update";
-
-  try {
-    // Check if the username already exists in DynamoDB
-    const userExists = await dynamodb
-      .get({
-        TableName: tableName,
-        Key: { commitID: commitID },
-      })
-      .promise();
-
-    if (userExists.Item) {
-      res.json({ message: "GitHub username already saved" });
-    } else {
-      // Save the GitHub username to DynamoDB
-      await dynamodb
-        .put({
-          TableName: tableName,
-          Item: {
-            commitID: commitID,
-            username: username,
-          },
-        })
-        .promise();
-      res.json({ message: "GitHub username saved successfully" });
-    }
-  } catch (error) {
-    console.error("Error saving GitHub username to DynamoDB:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});*/
 
 // Get GitHub events and store commits in DynamoDB
 app.get("/fetchGitHubEvents/:username", async (req, res) => {
