@@ -5,6 +5,7 @@ const fs = require("fs");
 
 app.use(express.json());
 const COL_NAME = "commitID";
+const COL_NAME2 = "username";
 
 app.get("/", (req, res) => {
   res.send("Welcome");

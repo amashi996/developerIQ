@@ -21,7 +21,7 @@ const app = express();
 const port = 3001;*/
 
 // Specify table name and column name
-const TABLE_NAME = "dev_commits";
+const TABLE_NAME = "dev_commits_update";
 const COL_NAME = "commitID";
 
 const getCommit = async () => {
