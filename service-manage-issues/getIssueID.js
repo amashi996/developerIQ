@@ -14,19 +14,19 @@ AWS.config.update({
 
 const dynamoClient = new AWS.DynamoDB.DocumentClient();
 
-// Specify table name and column name
-const TABLE_NAME = "dev_commits_update";
+//Specify table name and column name
+const TABLE_NAME = "dev_issues_update";
 
-const getCommit = async () => {
-  const params = {
-    TableName: TABLE_NAME,
-  };
-  const commits = await dynamoClient.scan(params).promise();
-  console.log(commits);
-  return commits;
+const getIssues = async () => {
+    const params = {
+        TableName: TABLE_NAME,
+    };
+    const issues = await dynamoClient.scan(params).promise();
+    console.log(issues);
+    return issues;
 };
 
 module.exports = {
-  dynamoClient,
-  getCommit,
+    dynamoClient,
+    getIssues
 };

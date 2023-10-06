@@ -23,7 +23,7 @@ function getGitHubToken() {
   }
 }
 
-// Define a function to get the maximum commit ID from your data source
+// Define a function to get the maximum commit ID your data source
 async function getMaxCommitID() {
   try {
     AWS.config.update({
@@ -33,7 +33,7 @@ async function getMaxCommitID() {
     });
 
     const dynamodb = new AWS.DynamoDB.DocumentClient();
-    const tableName = "dev_commits_update"; // Replace with your DynamoDB table name
+    const tableName = "dev_commits_update"; 
 
     const scanResult = await dynamodb.scan({
       TableName: tableName,
@@ -46,11 +46,11 @@ async function getMaxCommitID() {
       );
       return maxVal;
     } else {
-      return 0; // Return 0 if there are no items in the table
+      return 0; 
     }
   } catch (error) {
     console.error("Error in getting the maximum commit ID: ", error);
-    throw error; // You can handle the error appropriately in your code
+    throw error; 
   }
 }
 
@@ -77,11 +77,10 @@ app.get("/getCommits", async (req, res) => {
 // Get max commit id
 app.get("/getMaxCommitID", async (req, res) => {
   try {
-    // Replace this with your logic to get the maximum commit ID
     const maxId = await getMaxCommitID();
 
     console.log(`The maximum value for ${COL_NAME} is: ${maxId}`);
-    res.json({ maxVal: maxId + 1 });
+    res.json({ maxVal: maxId });
   } catch (error) {
     console.error("Error in getting the maximum commit ID: ", error);
     res.status(500).json({
