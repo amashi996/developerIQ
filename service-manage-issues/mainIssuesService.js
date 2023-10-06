@@ -61,6 +61,18 @@ app.get("/", (req, res) => {
     res.send("Welcome issue route handler")
 });
 
+// Get issues
+app.get("/getIssues", async (req, res) => {
+    try {
+        const issues = await getIssues();
+        res.json(issues);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Something went wrong",
+        });
+    }
+});
 
 //Get max issue id
 app.get("/getMaxIssueID", async (req, res) => {
@@ -97,53 +109,53 @@ app.get('/fetchGitHubIssues/:username', async (req, res) => {
         return res.status(500).json({
             error: "GitHub token is not available"
         });
-    }
+    } else {
+        try {
+            const issue_url = `https://api.github.com/search/issues?q=author:${username}`;
+            
+            // Initialize DynamoDB DocumentClient
+            const dynamodb = new AWS.DynamoDB.DocumentClient();
+            const tableName = "dev_issues_update";
 
-    const issue_url = `https://api.github.com/search/issues?q=author:${username}`;
+            const issue_responses = await axios.get(issue_url, {
+                headers: { Authorization: `token ${token}` },
+            });
 
-    try {
-        // Initialize DynamoDB DocumentClient
-        const dynamodb = new AWS.DynamoDB.DocumentClient();
-        const tableName = "dev_issues_update";
+            if (issue_responses.status === 200) {
+                const exist_issues = issue_responses.data.items;
 
-        const issue_responses = await axios.get(issue_url, {
-            headers: { Authorization: `token ${token}` },
-        });
+                console.log(`Issues created by ${username}:`);
+                let maxIssId = await getMaxIssueID(); // Initialize maxIssId once
 
-        if (issue_responses.status === 200) {
-            const exist_issues = issue_responses.data.items;
+                for (const issue of exist_issues) {
+                    // Increment the maxIssId for each issue
+                    maxIssId++;
 
-            console.log(`Issues created by ${username}:`);
-            let maxIssId = await getMaxIssueID(); // Initialize maxIssId once
+                    await dynamodb
+                        .put({
+                            TableName: tableName,
+                            Item: {
+                                issueID: maxIssId,
+                                username: username,
+                                issue_title: issue.title,
+                                issue_url: issue.html_url,
+                                type: 'CREATED',
+                            },
+                        })
+                        .promise();
 
-            for (const issue of exist_issues) {
-                // Increment the maxIssId for each issue
-                maxIssId++;
+                    console.log(`- ${issue.title} (${issue.html_url})`);
+                }
 
-                await dynamodb
-                    .put({
-                        TableName: tableName,
-                        Item: {
-                            issueID: maxIssId,
-                            username: username,
-                            issue_title: issue.title,
-                            issue_url: issue.html_url,
-                            type: 'CREATED',
-                        },
-                    })
-                    .promise();
-
-                console.log(`- ${issue.title} (${issue.html_url})`);
+                res.json({ message: `Stored ${exist_issues.length} issues created by ${username}` });
+            } else {
+                console.error(`Error: ${issue_responses.status}`);
+                res.status(issue_responses.status).json({ error: 'Error fetching created issues' });
             }
-
-            res.json({ message: `Stored ${exist_issues.length} issues created by ${username}` });
-        } else {
-            console.error(`Error: ${issue_responses.status}`);
-            res.status(issue_responses.status).json({ error: 'Error fetching created issues' });
+        } catch (error) {
+            console.error('Error:', error);
+            res.status(500).json({ error: 'Internal server error' });
         }
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
