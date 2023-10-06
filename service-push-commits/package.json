@@ -9,6 +9,7 @@
   "author": "Amashi Bastiansz",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.425.0",
     "aws-sdk": "^2.1469.0",
     "axios": "^1.5.1",
     "body-parser": "^1.20.2",

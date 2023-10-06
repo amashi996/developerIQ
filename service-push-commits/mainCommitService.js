@@ -3,22 +3,41 @@ const app = express();
 const axios = require("axios");
 const AWS = require("aws-sdk");
 const fs = require("fs");
-const uuid = require("uuid");
-const path = require("path");
 const { getCommit } = require("./getCommitID");
+const { SecretsManagerClient, GetSecretValueCommand }  = require("@aws-sdk/client-secrets-manager");
 
 const COL_NAME = "commitID";
-const TOKEN_FILE_PATH = path.resolve(__dirname, "../token.txt");
-require("dotenv").config({ path: TOKEN_FILE_PATH });
 
-// Define the function to get the GitHub token
-function getGitHubToken() {
+//Define a function to get the GitHub token
+async function getGitHubToken() {
+  const secret_name = "GITHUB_TOKEN";
+
+  const client = new SecretsManagerClient({
+    region: "ap-south-1",
+  });
+
   try {
-    const token = fs.readFileSync(TOKEN_FILE_PATH, "utf8");
-    console.log(token);
-    return token;
+    const response = await client.send(
+      new GetSecretValueCommand({
+        SecretId: secret_name,
+        VersionStage: "AWSCURRENT",
+      })
+    );
+
+    if (response.SecretString) {
+      const secret = JSON.parse(response.SecretString); 
+      if (secret.github_token) {
+        return { github_token: secret.github_token };
+      } else {
+        console.error("GitHub token not found in AWS Secrets Manager");
+        return null;
+      }
+    } else {
+      console.error("GitHub token not found in AWS Secrets Manager");
+      return null;
+    }
   } catch (error) {
-    console.error("Error reading GitHub token from file:", error);
+    console.error("Error fetching GitHub token from AWS Secrets Manager:", error);
     return null;
   }
 }
@@ -89,12 +108,12 @@ app.get("/getMaxCommitID", async (req, res) => {
   }
 });
 
-// Get GitHub Token
-app.get("/getGitHubToken", (req, res) => {
-  const token = getGitHubToken();
+//Get Github token
+app.get("/getGitHubToken", async (req, res) => {
+  const tokenResponse = await getGitHubToken();
 
-  if (token) {
-    res.json({ github_token: token });
+  if (tokenResponse) {
+    res.json(tokenResponse);
   } else {
     res.status(500).json({ error: "GitHub token is not available" });
   }
@@ -103,18 +122,19 @@ app.get("/getGitHubToken", (req, res) => {
 // Get GitHub events and store commits in DynamoDB
 app.get("/fetchGitHubEvents/:username", async (req, res) => {
   const username = req.params.username;
-  const token = getGitHubToken();
+  const tokenResponse = await getGitHubToken();
 
-  if (!token) {
+  if (!tokenResponse) {
     return res.status(500).json({ error: "GitHub token is not available" });
   } else {
-    console.log(token);
+    const githubToken = tokenResponse.github_token; // Extract the GitHub token
+    console.log(githubToken);
 
     const url = `https://api.github.com/users/${username}/events`;
     console.log(url);
 
     const headers = {
-      Authorization: `token ${token}`,
+      Authorization: `token ${githubToken}`, // Extract the token part
     };
 
     console.log(headers);

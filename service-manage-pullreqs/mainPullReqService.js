@@ -3,25 +3,45 @@ const app = express();
 const axios = require("axios");
 const AWS = require("aws-sdk");
 const fs = require("fs");
-const path = require("path");
+const { SecretsManagerClient, GetSecretValueCommand }  = require("@aws-sdk/client-secrets-manager");
 
 const { getPullReq } = require("./getPullReqID");
 
 const COL_NAME = "pullReqID";
-const TOKEN_FILE_PATH = path.resolve(__dirname, "../token.txt");
-require("dotenv").config({ path: TOKEN_FILE_PATH });
 
 //Define a function to get the GitHub token
-function getGitHubToken() {
+async function getGitHubToken() {
+    const secret_name = "GITHUB_TOKEN";
+  
+    const client = new SecretsManagerClient({
+      region: "ap-south-1",
+    });
+  
     try {
-        const token = fs.readFileSync(TOKEN_FILE_PATH, "utf8");
-        console.log(token);
-        return token;
-    } catch (error) {
-        console.error("Error reading GitHub token from file:", error);
+      const response = await client.send(
+        new GetSecretValueCommand({
+          SecretId: secret_name,
+          VersionStage: "AWSCURRENT",
+        })
+      );
+  
+      if (response.SecretString) {
+        const secret = JSON.parse(response.SecretString); 
+        if (secret.github_token) {
+          return { github_token: secret.github_token };
+        } else {
+          console.error("GitHub token not found in AWS Secrets Manager");
+          return null;
+        }
+      } else {
+        console.error("GitHub token not found in AWS Secrets Manager");
         return null;
+      }
+    } catch (error) {
+      console.error("Error fetching GitHub token from AWS Secrets Manager:", error);
+      return null;
     }
-}
+  }
 
 //Define a function to get the maximum pull request ID from data source
 async function getMaxPullReqID() {
@@ -90,27 +110,30 @@ app.get("/getMaxPullReqID", async (req, res) => {
 })
 
 //Get Github token
-app.get("/getGitHubToken", (req, res) => {
-    const token = getGitHubToken();
-
-    if (token) {
-        res.json({ github_token: token });
+app.get("/getGitHubToken", async (req, res) => {
+    const tokenResponse = await getGitHubToken();
+  
+    if (tokenResponse) {
+      res.json(tokenResponse);
     } else {
-        res.status(500).json({ error: "GitHub token is not available" });
+      res.status(500).json({ error: "GitHub token is not available" });
     }
-});
+  });
 
 // Route to fetch pull request data in DynamoDB
 app.get('/fetchGitHubPullRequests/:username', async (req, res) => {
     const username = req.params.username;
-    const token = await getGitHubToken();
+    const tokenResponse = await getGitHubToken();
 
-    if (!token) {
+    if (!tokenResponse) {
         return res.status(500).json({
             error: "GitHub token is not available"
         });
     } else {
         try {
+            const githubToken = tokenResponse.github_token; 
+            console.log(githubToken);
+
             // Initialize a DynamoDB table resource
             const dynamodb = new AWS.DynamoDB.DocumentClient();
             const tableName = "dev_pullreqs_update";
@@ -118,8 +141,9 @@ app.get('/fetchGitHubPullRequests/:username', async (req, res) => {
             // Step 1: Get the repositories where the user has contributed pull requests
             const repo_url = `https://api.github.com/users/${username}/repos?type=owner`;
             const repo_response = await axios.get(repo_url, {
-                headers: { Authorization: `token ${token}` },
+                headers: { Authorization: `token ${githubToken}` },
             });
+
 
             if (repo_response.status === 200) {
                 const repositories = repo_response.data;
@@ -132,7 +156,7 @@ app.get('/fetchGitHubPullRequests/:username', async (req, res) => {
                     const pr_url = `https://api.github.com/repos/${owner}/${repo_name}/pulls?state=all`;
                  
                     const pr_response = await axios.get(pr_url, {
-                        headers: { Authorization: `token ${token}` },
+                        headers: { Authorization: `token ${githubToken}` },
                     });
                     
                     const pull_requests = pr_response.data;
