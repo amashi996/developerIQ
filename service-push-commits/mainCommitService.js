@@ -99,7 +99,7 @@ app.get("/getMaxCommitID", async (req, res) => {
     const maxId = await getMaxCommitID();
 
     console.log(`The maximum value for ${COL_NAME} is: ${maxId}`);
-    res.json({ maxVal: maxId });
+    res.json({ maxVal: maxId+1 });
   } catch (error) {
     console.error("Error in getting the maximum commit ID: ", error);
     res.status(500).json({

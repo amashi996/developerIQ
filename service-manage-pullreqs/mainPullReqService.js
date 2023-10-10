@@ -100,7 +100,7 @@ app.get("/getMaxPullReqID", async (req, res) => {
         const maxPRID = await getMaxPullReqID();
 
         console.log(`The maximum value for ${COL_NAME} is: ${maxPRID}`);
-        res.json({ maxPullReqVal: maxPRID });
+        res.json({ maxPullReqVal: maxPRID+1 });
     } catch (error) {
         console.error("Error in the scanning table: ", error);
         res.status(500).json({
