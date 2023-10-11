@@ -1,6 +1,11 @@
 # Use an official Node.js runtime as the base image
 FROM node:14
 
+# Install AWS CLI
+RUN apt-get update && \
+    apt-get install -y awscli && \
+    apt-get clean
+
 # Set AWS credentials as environment variables
 ENV AWS_ACCESS_KEY_ID=AKIA4P5KXPG6LPDNAM6X
 ENV AWS_SECRET_ACCESS_KEY=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
