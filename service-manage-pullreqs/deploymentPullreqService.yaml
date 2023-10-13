@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-pullreqs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pullreqs-service
+  template:
+    metadata:
+      labels:
+        app: pullreqs-service
+    spec:
+      containers:
+      - name: pullreqs-service
+        image: 858814642620.dkr.ecr.ap-south-1.amazonaws.com/pullreq-service:latest
+        ports:
+        - containerPort: 3003

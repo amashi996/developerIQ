@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-commits
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: commits-service
+  template:
+    metadata:
+      labels:
+        app: commits-service
+    spec:
+      containers:
+      - name: commits-service
+        image: 858814642620.dkr.ecr.ap-south-1.amazonaws.com/commit-service:latest
+        ports:
+        - containerPort: 3001

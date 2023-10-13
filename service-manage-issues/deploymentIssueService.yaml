@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-issues
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: issues-service
+  template:
+    metadata:
+      labels:
+        app: issues-service
+    spec:
+      containers:
+      - name: issues-service
+        image: 858814642620.dkr.ecr.ap-south-1.amazonaws.com/issue-service:latest
+        ports:
+        - containerPort: 3002
