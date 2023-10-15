@@ -2,5 +2,6 @@
 /service-manage-pullreqs/node_modules/
 /service-push-commits/node_modules/
 /node_modules/
-token.js
-amashiS_asce_accessKeys.csv
+/token.js/
+/amashiS_asce_accessKeys.csv/
+/.env/
